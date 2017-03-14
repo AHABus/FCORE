@@ -1,0 +1,15 @@
+{
+    "mission-name": "FCORE Test 1",
+    "payloads": [
+        {
+            "address":  10,
+            "name":     "zero-mass spectrometer",
+            "priority": 100
+        },
+        {
+            "address":  10,
+            "name":     "zero-mass spectrometer",
+            "priority": 100
+        }
+    ]
+}
