@@ -1,8 +1,8 @@
 ///
 /// @file        RTXCommon.h
 /// @brief       AHABus Packet Radio - common includes and functions
-/// @author      Cesar Parent
-/// @copyright   2017 Cesar Parent
+/// @author      Amy Parent
+/// @copyright   2017 Amy Parent
 ///
 #pragma once
 #include <stdbool.h>

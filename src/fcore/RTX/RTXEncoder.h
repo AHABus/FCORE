@@ -1,8 +1,8 @@
 ///
 /// @file        RTXEncoder.h
 /// @brief       AHABus Packet Radio - frame & packet encoding routines
-/// @author      Cesar Parent
-/// @copyright   2017 Cesar Parent
+/// @author      Amy Parent
+/// @copyright   2017 Amy Parent
 ///
 #pragma once
 #include "RTXCommon.h"

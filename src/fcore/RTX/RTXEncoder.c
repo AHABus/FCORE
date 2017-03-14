@@ -1,8 +1,8 @@
 ///
 /// @file        RTXEncoder.c
 /// @brief       AHABus Packet Radio - frame & packet encoding routines
-/// @author      Cesar Parent
-/// @copyright   2017 Cesar Parent
+/// @author      Amy Parent
+/// @copyright   2017 Amy Parent
 ///
 #include <stdio.h>
 #include "RTXEncoder.h"

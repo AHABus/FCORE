@@ -4,6 +4,7 @@
  */
 #include "FreeRTOS.h"
 #include "task.h"
+#include "fcore.h"
 
 void user_init(void) {
     
