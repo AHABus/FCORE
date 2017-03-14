@@ -2,3 +2,4 @@ build/*
 firmware/*
 .DS_Store
 *.o
+__*
