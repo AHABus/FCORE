@@ -6,7 +6,7 @@
 ///
 #include <stdio.h>
 #include "RTXEncoder.h"
-#include "rs8.h"
+#include "RTXRS8.h"
 
 #define HIGH16(u16) (((u16) >> 8) & 0x00ff)
 #define LOW16(u16)  ((u16) & 0x00ff) 
