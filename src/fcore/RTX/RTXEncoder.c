@@ -91,7 +91,7 @@ static void _writeFEC(uint8_t frame[FRAME_SIZE]) {
     encode_rs_8(&frame[1], &frame[FRAME_DATASIZE], 0);
 }
 
-int16_t fcore_rtxEncodePacket(RTXCoder* encoder, RTXPacketHeader* header) {
+int16_t fcoreRTXEncodePacket(RTXCoder* encoder, RTXPacketHeader* header) {
     
     if(header->length == 0) { return 0; }
     

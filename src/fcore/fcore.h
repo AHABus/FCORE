@@ -7,9 +7,13 @@
 #pragma once
 #include <stdint.h>
 
+/// An entry in the payload table.
 typedef struct {
+    /// The payload's address on the I2C FCORE Bus.
     uint8_t         address;
+    /// The payload's name. Used mostly for debugging purposes.
     const char*     name;
+    /// The payload's priority.
     uint8_t         priority;
 } FCPayload;
 

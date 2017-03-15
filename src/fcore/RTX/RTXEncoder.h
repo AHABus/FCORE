@@ -12,4 +12,4 @@
 // written to a user buffer using [encoder]'s write callback.
 //
 // Returns the number of frames generated, or -1 if an error occurred.
-int16_t fcore_rtxEncodePacket(RTXCoder* encoder, RTXPacketHeader* header);
+int16_t fcoreRTXEncodePacket(RTXCoder* encoder, RTXPacketHeader* header);
