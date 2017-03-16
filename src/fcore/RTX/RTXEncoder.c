@@ -5,6 +5,7 @@
 /// @copyright   2017 Amy Parent
 ///
 #include <stdio.h>
+#include "../fcore/uart.h"
 #include "RTXEncoder.h"
 #include "RTXRS8.h"
 
@@ -21,13 +22,10 @@ static inline void _clearFrame(uint8_t frame[FRAME_SIZE]) {
 
 // Write a frame using the encoder's write callback.
 static inline bool _writeFrame(RTXCoder* encoder, uint8_t frame[FRAME_SIZE]) {
-    // First write one sync byte
-    if(!encoder->writeCallback(0xAA, encoder->writeData)) { return false; }
-    
     // Then write the frame itself
-    for(uint16_t i = 0; i < FRAME_SIZE; ++i) {
-        if(!encoder->writeCallback(frame[i], encoder->writeData)) { return false; }
-    }
+    static const uint8_t syncByte = 0xAA;
+    fcore_rtxWrite(&syncByte, 1);
+    fcore_rtxWrite(frame, FRAME_SIZE);
     return true;
 }
 

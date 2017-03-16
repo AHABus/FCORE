@@ -155,11 +155,6 @@ void fcore_rtxInit(uint16_t baudRate) {
 void fcore_uartInit(uint16_t baudRate) {
     _xt_isr_mask(1 << INUM_UART);
     _uartReset();
-
-    // PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD);
-    // PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD);
-    // PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
-    // PIN_PULLUP_EN(PERIPHS_IO_MUX_U0RXD_U);
     
     uint32_t clkdiv = APB_CLK_FREQ / baudRate;
     WRITE_PERI_REG(UART_CLKDIV(UART0), clkdiv);
@@ -192,7 +187,7 @@ void fcore_uartStop() {
     WRITE_PERI_REG(UART_INT_ENA(UART0), 0x0000);
 }
 
-static void _uartWrite(int uart, volatile FCBuffer* buf, uint8_t* bytes, uint32_t length) {
+static void _uartWrite(int uart, volatile FCBuffer* buf, const uint8_t* bytes, uint32_t length) {
     if(length > FCORE_RTX_BUFFERSIZE) { return; }
     while(fcore_rtxAvailable() < length) {}
 
@@ -206,11 +201,11 @@ static void _uartWrite(int uart, volatile FCBuffer* buf, uint8_t* bytes, uint32_
     SET_PERI_REG_MASK(UART_INT_ENA(uart), UART_TXFIFO_EMPTY_INT_ENA);
 }
 
-void fcore_rtxWrite(uint8_t* bytes, uint16_t length) {
+void fcore_rtxWrite(const uint8_t* bytes, uint16_t length) {
     _uartWrite(UART1, &_u1TX, bytes, length);
 }
 
-void fcore_uartWrite(uint8_t* bytes, uint16_t length) {
+void fcore_uartWrite(const uint8_t* bytes, uint16_t length) {
     _uartWrite(UART0, &_u0TX, bytes, length);
 }
 

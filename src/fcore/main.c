@@ -24,19 +24,19 @@ void blinkenRegisterTask(void *pvParameters) {
     fcore_rtxInit(200);
     fcore_uartInit(9600);
     
-    fcore_rtxWrite(welcome, strlen(welcome));
+    fcore_rtxWrite((uint8_t*)welcome, strlen(welcome));
     
     static uint8_t rx[512];
     while(1) {
         
         uint16_t len = fcore_uartRead(rx, 512);
         if(len > 0) {
-            fcore_rtxWrite("rcvd: ", 6);
+            fcore_rtxWrite((uint8_t*)"rcvd: ", 6);
             fcore_rtxWrite(rx, len);
-            fcore_rtxWrite("\r\n", 2);
+            fcore_rtxWrite((uint8_t*)"\r\n", 2);
         }
         else {
-            fcore_rtxWrite("nothing to display\r\n", strlen("nothing to display\r\n"));
+            fcore_rtxWrite((uint8_t*)"nothing to display\r\n", strlen("nothing to display\r\n"));
         }
         
         //fcore_rtxWrite("Hello\r\n", 7);
