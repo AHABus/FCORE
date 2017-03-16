@@ -7,13 +7,13 @@
 #pragma once
 #include <stdint.h>
 
-#define FCORE_RTX_BUFFERSIZE    2048
+#define FCORE_RTX_BUFFERSIZE    4096
 
-void fcore_rtxInit(uint16_t baudRate);
+void fcore_rtxInit(uint32_t baudRate);
 
 void fcore_rtxStop();
 
 void fcore_rtxWrite(uint8_t byte);
 
-void fcore_rtxWriteBytes(uint8_t* bytes, uint16_t length);
+void fcore_rtxWriteBytes(uint8_t* bytes, uint32_t length);
 
