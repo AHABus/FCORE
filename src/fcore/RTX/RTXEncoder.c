@@ -5,7 +5,7 @@
 /// @copyright   2017 Amy Parent
 ///
 #include <stdio.h>
-#include <fcore/uart.h>
+#include <fcore/buses/uart.h>
 #include "RTXEncoder.h"
 #include "RTXRS8.h"
 

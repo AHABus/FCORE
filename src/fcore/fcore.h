@@ -17,6 +17,13 @@ typedef struct {
     uint8_t         priority;
 } FCPayload;
 
+
+typedef enum {
+    PRIORITY_IDLE,
+    PRIORITY_GNSS,
+    PRIORITY_PAYLOAD,
+} FCPriority;
+
 #define FCORE_MAIN_INCLUDE
 #include "__fcore_cfg.h"
 #undef FCORE_MAIN_INCLUDE

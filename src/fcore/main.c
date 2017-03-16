@@ -6,14 +6,14 @@
 ///
 #include "FreeRTOS.h"
 #include "task.h"
-#include "fcore.h"
 #include <stdio.h>
 #include <string.h>
-#include "fcore/uart.h"
 #include "esp/uart.h"
-#include "task.h"
 #include "esp8266.h"
 #include "espressif/esp_common.h"
+
+#include <fcore/fcore.h>
+#include <fcore/buses/uart.h>
 
 static const char* welcome = ">> FCORE RTX TESTS\r\n";
 
@@ -35,11 +35,6 @@ void blinkenRegisterTask(void *pvParameters) {
             fcore_rtxWrite(rx, len);
             fcore_rtxWrite((uint8_t*)"\r\n", 2);
         }
-        else {
-            fcore_rtxWrite((uint8_t*)"nothing to display\r\n", strlen("nothing to display\r\n"));
-        }
-        
-        //fcore_rtxWrite("Hello\r\n", 7);
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 }

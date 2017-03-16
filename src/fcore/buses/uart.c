@@ -4,8 +4,8 @@
 /// @author      Amy Parent
 /// @copyright   2017 Amy Parent
 ///
+#include <fcore/buses/uart.h>
 #include <stdbool.h>
-#include "uart.h"
 #include "common_macros.h"
 #include "esp/interrupts.h"
 #include "espressif/esp8266/ets_sys.h"
