@@ -24,7 +24,9 @@ static volatile FCBuffer _u1TX;
 static volatile FCBuffer _u0TX;
 static volatile FCBuffer _u0RX;
 
-#define UART_TX_THRESHOLD   2
+#define UART_RX_TOUT        8
+#define UART_RX_THRESHOLD   120
+#define UART_TX_THRESHOLD   5
 #define UART_TX_FIFOSIZE    127 // keep some margin, just in case.
 #define UART0               0
 #define UART1               1
@@ -33,6 +35,8 @@ static volatile FCBuffer _u0RX;
 // Define some helper macros to handle FIFO functions
 #define UART_TXFIFO_LEN(uart_no) ((READ_PERI_REG(UART_STATUS(uart_no)) >> UART_TXFIFO_CNT_S) & UART_RXFIFO_CNT)
 #define UART_TXFIFO_PUT(uart_no, byte) WRITE_PERI_REG(UART_FIFO(uart_no), (byte) & 0xff)
+#define UART_RXFIFO_LEN(uart_no) ((READ_PERI_REG(UART_STATUS(uart_no)) >> UART_RXFIFO_CNT_S) & UART_RXFIFO_CNT)
+#define UART_RXFIFO_GET(uart_no) READ_PERI_REG(UART_FIFO(uart_no))
 
 static uint32_t fcore_rtxAvailable() {
     return ((FCORE_RTX_BUFFERSIZE + _u1TX.head - _u1TX.tail) % FCORE_RTX_BUFFERSIZE)
@@ -45,31 +49,56 @@ static IRAM void _uartISR() {
     
     // Handle transmission for UART0
     if(u0st & UART_TXFIFO_EMPTY_INT_ST) {
+        WRITE_PERI_REG(UART_INT_CLR(UART0), UART_TXFIFO_EMPTY_INT_CLR);
         
         while(UART_TXFIFO_LEN(UART0) < UART_TX_FIFOSIZE && _u0TX.head != _u0TX.tail) {
             UART_TXFIFO_PUT(UART1, _u1TX.data[_u0TX.tail]);
-            _u1TX.tail = (_u0TX.tail + 1) % FCORE_RTX_BUFFERSIZE;
+            _u0TX.tail = (_u0TX.tail + 1) % FCORE_RTX_BUFFERSIZE;
         }
-        
-        WRITE_PERI_REG(UART_INT_CLR(UART0), UART_TXFIFO_EMPTY_INT_CLR);
         if(_u0TX.head == _u0TX.tail) {
             CLEAR_PERI_REG_MASK(UART_INT_ENA(UART0), UART_TXFIFO_EMPTY_INT_ENA);
         }
     }
+    else if(u0st & UART_RXFIFO_FULL_INT_ST) {
+        
+        while(UART_RXFIFO_LEN(UART0) > 0) {
+            uint32_t nextHead = (_u0RX.head + 1) % FCORE_RTX_BUFFERSIZE;
+            if(nextHead == _u0RX.tail) { break; }
+            _u0RX.data[_u0RX.head] = UART_RXFIFO_GET(UART0);
+            _u0RX.head = nextHead;
+        }
+        WRITE_PERI_REG(UART_INT_CLR(UART0), UART_RXFIFO_FULL_INT_ST);
+    }
+    else if(u0st & UART_RXFIFO_TOUT_INT_ST) {
+        
+        while(UART_RXFIFO_LEN(UART0) > 0) {
+            uint32_t nextHead = (_u0RX.head + 1) % FCORE_RTX_BUFFERSIZE;
+            if(nextHead == _u0RX.tail) { break; }
+            _u0RX.data[_u0RX.head] = UART_RXFIFO_GET(UART0);
+            _u0RX.head = nextHead;
+        }
+        WRITE_PERI_REG(UART_INT_CLR(UART0), UART_RXFIFO_TOUT_INT_ST);
+    }
     
     // Handle transmission for UART1
     if(u1st & UART_TXFIFO_EMPTY_INT_ST) {
+        WRITE_PERI_REG(UART_INT_CLR(UART1), UART_TXFIFO_EMPTY_INT_CLR);
         
         while(UART_TXFIFO_LEN(UART1) < UART_TX_FIFOSIZE && _u1TX.head != _u1TX.tail) {
             UART_TXFIFO_PUT(UART1, _u1TX.data[_u1TX.tail]);
             _u1TX.tail = (_u1TX.tail + 1) % FCORE_RTX_BUFFERSIZE;
         }
         
-        WRITE_PERI_REG(UART_INT_CLR(UART1), UART_TXFIFO_EMPTY_INT_CLR);
         if(_u1TX.head == _u1TX.tail) {
             CLEAR_PERI_REG_MASK(UART_INT_ENA(UART1), UART_TXFIFO_EMPTY_INT_ENA);
         }
     }
+    
+    WRITE_PERI_REG(UART_INT_ST(UART0), 0x0000);
+    WRITE_PERI_REG(UART_INT_ST(UART1), 0x0000);
+    WRITE_PERI_REG(UART_INT_CLR(UART0), 0xffff);
+    WRITE_PERI_REG(UART_INT_CLR(UART1), 0xffff);
+    
 }
 
 
@@ -126,6 +155,11 @@ void fcore_rtxInit(uint16_t baudRate) {
 void fcore_uartInit(uint16_t baudRate) {
     _xt_isr_mask(1 << INUM_UART);
     _uartReset();
+
+    // PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD);
+    // PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD);
+    // PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
+    // PIN_PULLUP_EN(PERIPHS_IO_MUX_U0RXD_U);
     
     uint32_t clkdiv = APB_CLK_FREQ / baudRate;
     WRITE_PERI_REG(UART_CLKDIV(UART0), clkdiv);
@@ -135,6 +169,15 @@ void fcore_uartInit(uint16_t baudRate) {
     SET_PERI_REG_MASK(UART_CONF0(UART0), (1 << UART_STOP_BIT_NUM_S));
     SET_PERI_REG_MASK(UART_CONF0(UART0), (3 << UART_BIT_NUM_S));
     CLEAR_PERI_REG_MASK(UART_CONF0(UART0), UART_PARITY_EN);
+    
+    // Setup RX stuff for UART0
+    SET_PERI_REG_MASK(UART_CONF1(UART0), UART_RX_TOUT_EN);
+    SET_PERI_REG_MASK(UART_CONF1(UART0), UART_RX_THRESHOLD << UART_RXFIFO_FULL_THRHD_S);
+    SET_PERI_REG_MASK(UART_CONF1(UART0), UART_RX_TOUT << UART_RX_TOUT_THRHD_S);
+    
+    // Enable RX interrupts for UART0
+    SET_PERI_REG_MASK(UART_INT_ENA(UART0), UART_RXFIFO_TOUT_INT_ENA);
+    SET_PERI_REG_MASK(UART_INT_ENA(UART0), UART_RXFIFO_FULL_INT_ENA);
     
     _xt_isr_unmask(1 << INUM_UART);
 }
@@ -149,7 +192,7 @@ void fcore_uartStop() {
     WRITE_PERI_REG(UART_INT_ENA(UART0), 0x0000);
 }
 
-static void _uartWriteBytes(int uart, volatile FCBuffer* buf, uint8_t* bytes, uint32_t length) {
+static void _uartWrite(int uart, volatile FCBuffer* buf, uint8_t* bytes, uint32_t length) {
     if(length > FCORE_RTX_BUFFERSIZE) { return; }
     while(fcore_rtxAvailable() < length) {}
 
@@ -163,15 +206,19 @@ static void _uartWriteBytes(int uart, volatile FCBuffer* buf, uint8_t* bytes, ui
     SET_PERI_REG_MASK(UART_INT_ENA(uart), UART_TXFIFO_EMPTY_INT_ENA);
 }
 
-void fcore_rtxWriteBytes(uint8_t* bytes, uint16_t length) {
-    _uartWriteBytes(UART1, &_u1TX, bytes, length);
+void fcore_rtxWrite(uint8_t* bytes, uint16_t length) {
+    _uartWrite(UART1, &_u1TX, bytes, length);
 }
 
-void fcore_uartWriteBytes(uint8_t* bytes, uint16_t length) {
-    _uartWriteBytes(UART0, &_u1TX, bytes, length);
+void fcore_uartWrite(uint8_t* bytes, uint16_t length) {
+    _uartWrite(UART0, &_u0TX, bytes, length);
 }
 
-uint16_t fcore_uartReadBytes(uint8_t* bytes, uint16_t length) {
-    // TODO: implementation
-    return length;
+uint16_t fcore_uartRead(uint8_t* bytes, uint16_t length) {
+    uint16_t i = 0;
+    for(i = 0; i < length && _u0RX.head != _u0RX.tail; ++i) {
+        bytes[i++] = _u0RX.data[_u0RX.tail];
+        _u0RX.tail = (_u0RX.tail + 1) % FCORE_RTX_BUFFERSIZE;
+    }
+    return i;
 }

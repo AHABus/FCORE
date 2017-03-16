@@ -18,8 +18,8 @@ void fcore_uartInit(uint16_t baudRate);
 void fcore_rtxStop();
 void fcore_uartStop();
 
-void fcore_rtxWriteBytes(uint8_t* bytes, uint16_t length);
-void fcore_uartWriteBytes(uint8_t* bytes, uint16_t length);
+void fcore_rtxWrite(uint8_t* bytes, uint16_t length);
+void fcore_uartWrite(uint8_t* bytes, uint16_t length);
 
-uint16_t fcore_uartReadBytes(uint8_t* bytes, uint16_t length);
+uint16_t fcore_uartRead(uint8_t* bytes, uint16_t length);
 
