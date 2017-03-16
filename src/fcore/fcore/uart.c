@@ -117,6 +117,7 @@ void fcore_rtxInit(uint16_t baudRate) {
     
     // We want to obtain a 8N2 setup to comply with FCORE RTTY reqs.
     SET_PERI_REG_MASK(UART_CONF0(UART1), (3 << UART_STOP_BIT_NUM_S));
+    SET_PERI_REG_MASK(UART_CONF0(UART1), (3 << UART_BIT_NUM_S));
     CLEAR_PERI_REG_MASK(UART_CONF0(UART1), UART_PARITY_EN);
     
     _xt_isr_unmask(1 << INUM_UART);
@@ -129,15 +130,23 @@ void fcore_uartInit(uint16_t baudRate) {
     uint32_t clkdiv = APB_CLK_FREQ / baudRate;
     WRITE_PERI_REG(UART_CLKDIV(UART0), clkdiv);
     
-    // We want to obtain a 8N2 setup to comply with FCORE RTTY reqs.
+    // We could try a general purpose, set-your-own-settings system, but we can
+    // simplify things a lot if we go with 8N1, which is enough for what we do.
     SET_PERI_REG_MASK(UART_CONF0(UART0), (1 << UART_STOP_BIT_NUM_S));
+    SET_PERI_REG_MASK(UART_CONF0(UART0), (3 << UART_BIT_NUM_S));
     CLEAR_PERI_REG_MASK(UART_CONF0(UART0), UART_PARITY_EN);
     
     _xt_isr_unmask(1 << INUM_UART);
 }
 
 void fcore_rtxStop() {
-    
+    WRITE_PERI_REG(UART_INT_CLR(UART1), 0xffff);
+    WRITE_PERI_REG(UART_INT_ENA(UART1), 0x0000);
+}
+
+void fcore_uartStop() {
+    WRITE_PERI_REG(UART_INT_CLR(UART0), 0xffff);
+    WRITE_PERI_REG(UART_INT_ENA(UART0), 0x0000);
 }
 
 static void _uartWriteBytes(int uart, volatile FCBuffer* buf, uint8_t* bytes, uint32_t length) {
@@ -160,4 +169,9 @@ void fcore_rtxWriteBytes(uint8_t* bytes, uint16_t length) {
 
 void fcore_uartWriteBytes(uint8_t* bytes, uint16_t length) {
     _uartWriteBytes(UART0, &_u1TX, bytes, length);
+}
+
+uint16_t fcore_uartReadBytes(uint8_t* bytes, uint16_t length) {
+    // TODO: implementation
+    return length;
 }
