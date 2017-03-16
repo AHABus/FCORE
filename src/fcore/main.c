@@ -9,7 +9,7 @@
 #include "fcore.h"
 #include <stdio.h>
 #include <string.h>
-#include "rtx/RTX.h"
+#include "fcore/uart.h"
 #include "esp/uart.h"
 #include "task.h"
 #include "esp8266.h"
