@@ -6,3 +6,4 @@
 ///
 #pragma once
 
+extern void fcore_startGNSSTask();

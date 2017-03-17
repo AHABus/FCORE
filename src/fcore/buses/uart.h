@@ -9,9 +9,6 @@
 
 #define FCORE_RTX_BUFFERSIZE    4096
 
-#define FC_UART 0
-#define FC_RTX  1
-
 void fcore_rtxInit(uint16_t baudRate);
 void fcore_uartInit(uint16_t baudRate);
 
