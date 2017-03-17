@@ -14,33 +14,13 @@
 
 #include <fcore/fcore.h>
 #include <fcore/buses/uart.h>
-
-static const char* welcome = ">> FCORE RTX TESTS\r\n";
-
-void blinkenRegisterTask(void *pvParameters) {
-    GPIO.ENABLE_OUT_SET = BIT(2);
-    gpio_set_iomux_function(2, IOMUX_GPIO2_FUNC_UART1_TXD);
-    
-    fcore_rtxInit(200);
-    fcore_uartInit(9600);
-    
-    fcore_rtxWrite((uint8_t*)welcome, strlen(welcome));
-    
-    static uint8_t rx[512];
-    while(1) {
-        
-        uint16_t len = fcore_uartRead(rx, 512);
-        if(len > 0) {
-            fcore_rtxWrite((uint8_t*)"rcvd: ", 6);
-            fcore_rtxWrite(rx, len);
-            fcore_rtxWrite((uint8_t*)"\r\n", 2);
-        }
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
-    }
-}
+#include <fcore/tasks/gnss.h>
 
 void user_init(void) {
     //uart_set_baud(1, 200);
-    xTaskCreate(blinkenRegisterTask, "blinkenRegisterTask", 256, NULL, 2, NULL);
-    
+    //xTaskCreate(blinkenRegisterTask, "blinkenRegisterTask", 256, NULL, 2, NULL);
+    GPIO.ENABLE_OUT_SET = BIT(2);
+    gpio_set_iomux_function(2, IOMUX_GPIO2_FUNC_UART1_TXD);
+    fcore_rtxInit(200);
+    fcore_startGNSSTask();
 }

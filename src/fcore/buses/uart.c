@@ -13,9 +13,10 @@
 #include "esp/uart.h"
 #include "uart_register.h"
 
+#define FCORE_BUFFERSIZE      4096
 
 typedef struct {
-    uint8_t data[FCORE_RTX_BUFFERSIZE];
+    uint8_t data[FCORE_BUFFERSIZE];
     uint16_t head;
     uint16_t tail;
 } FCBuffer;
@@ -33,14 +34,18 @@ static volatile FCBuffer _u0RX;
 
 // Taken from: https://github.com/juhovh/esp-uart/blob/master/esp_uart.c
 // Define some helper macros to handle FIFO functions
-#define UART_TXFIFO_LEN(uart_no) ((READ_PERI_REG(UART_STATUS(uart_no)) >> UART_TXFIFO_CNT_S) & UART_RXFIFO_CNT)
-#define UART_TXFIFO_PUT(uart_no, byte) WRITE_PERI_REG(UART_FIFO(uart_no), (byte) & 0xff)
-#define UART_RXFIFO_LEN(uart_no) ((READ_PERI_REG(UART_STATUS(uart_no)) >> UART_RXFIFO_CNT_S) & UART_RXFIFO_CNT)
-#define UART_RXFIFO_GET(uart_no) READ_PERI_REG(UART_FIFO(uart_no))
+#define UART_TXFIFO_LEN(uart_no) \
+    ((READ_PERI_REG(UART_STATUS(uart_no)) >> UART_TXFIFO_CNT_S) & UART_RXFIFO_CNT)
+#define UART_TXFIFO_PUT(uart_no, byte) \
+    WRITE_PERI_REG(UART_FIFO(uart_no), (byte) & 0xff)
+#define UART_RXFIFO_LEN(uart_no) \
+    ((READ_PERI_REG(UART_STATUS(uart_no)) >> UART_RXFIFO_CNT_S) & UART_RXFIFO_CNT)
+#define UART_RXFIFO_GET(uart_no) \
+    READ_PERI_REG(UART_FIFO(uart_no))
 
 static uint32_t fcore_rtxAvailable() {
-    return ((FCORE_RTX_BUFFERSIZE + _u1TX.head - _u1TX.tail) % FCORE_RTX_BUFFERSIZE)
-           - FCORE_RTX_BUFFERSIZE;
+    return ((FCORE_BUFFERSIZE + _u1TX.head - _u1TX.tail) % FCORE_BUFFERSIZE)
+           - FCORE_BUFFERSIZE;
 }
 
 static IRAM void _uartISR() {
@@ -53,7 +58,7 @@ static IRAM void _uartISR() {
         
         while(UART_TXFIFO_LEN(UART0) < UART_TX_FIFOSIZE && _u0TX.head != _u0TX.tail) {
             UART_TXFIFO_PUT(UART1, _u1TX.data[_u0TX.tail]);
-            _u0TX.tail = (_u0TX.tail + 1) % FCORE_RTX_BUFFERSIZE;
+            _u0TX.tail = (_u0TX.tail + 1) % FCORE_BUFFERSIZE;
         }
         if(_u0TX.head == _u0TX.tail) {
             CLEAR_PERI_REG_MASK(UART_INT_ENA(UART0), UART_TXFIFO_EMPTY_INT_ENA);
@@ -62,7 +67,7 @@ static IRAM void _uartISR() {
     else if(u0st & UART_RXFIFO_FULL_INT_ST) {
         
         while(UART_RXFIFO_LEN(UART0) > 0) {
-            uint32_t nextHead = (_u0RX.head + 1) % FCORE_RTX_BUFFERSIZE;
+            uint32_t nextHead = (_u0RX.head + 1) % FCORE_BUFFERSIZE;
             if(nextHead == _u0RX.tail) { break; }
             _u0RX.data[_u0RX.head] = UART_RXFIFO_GET(UART0);
             _u0RX.head = nextHead;
@@ -72,7 +77,7 @@ static IRAM void _uartISR() {
     else if(u0st & UART_RXFIFO_TOUT_INT_ST) {
         
         while(UART_RXFIFO_LEN(UART0) > 0) {
-            uint32_t nextHead = (_u0RX.head + 1) % FCORE_RTX_BUFFERSIZE;
+            uint32_t nextHead = (_u0RX.head + 1) % FCORE_BUFFERSIZE;
             if(nextHead == _u0RX.tail) { break; }
             _u0RX.data[_u0RX.head] = UART_RXFIFO_GET(UART0);
             _u0RX.head = nextHead;
@@ -86,7 +91,7 @@ static IRAM void _uartISR() {
         
         while(UART_TXFIFO_LEN(UART1) < UART_TX_FIFOSIZE && _u1TX.head != _u1TX.tail) {
             UART_TXFIFO_PUT(UART1, _u1TX.data[_u1TX.tail]);
-            _u1TX.tail = (_u1TX.tail + 1) % FCORE_RTX_BUFFERSIZE;
+            _u1TX.tail = (_u1TX.tail + 1) % FCORE_BUFFERSIZE;
         }
         
         if(_u1TX.head == _u1TX.tail) {
@@ -187,13 +192,14 @@ void fcore_uartStop() {
     WRITE_PERI_REG(UART_INT_ENA(UART0), 0x0000);
 }
 
-static void _uartWrite(int uart, volatile FCBuffer* buf, const uint8_t* bytes, uint32_t length) {
-    if(length > FCORE_RTX_BUFFERSIZE) { return; }
+static void _uartWrite(int uart, volatile FCBuffer* buf,
+                       const uint8_t* bytes, uint32_t length) {
+    if(length > FCORE_BUFFERSIZE) { return; }
     while(fcore_rtxAvailable() < length) {}
 
     _xt_isr_mask(1 << INUM_UART);
     for(uint32_t i = 0; i < length; ++i) {
-        uint32_t nextHead = (buf->head + 1) % FCORE_RTX_BUFFERSIZE;
+        uint32_t nextHead = (buf->head + 1) % FCORE_BUFFERSIZE;
         buf->data[buf->head] = bytes[i];
         buf->head = nextHead;
     }
@@ -209,11 +215,26 @@ void fcore_uartWrite(const uint8_t* bytes, uint16_t length) {
     _uartWrite(UART0, &_u0TX, bytes, length);
 }
 
+uint16_t fcore_uartAvailable() {
+    return ((FCORE_BUFFERSIZE + _u0RX.head - _u0RX.tail) % FCORE_BUFFERSIZE);
+}
+
 uint16_t fcore_uartRead(uint8_t* bytes, uint16_t length) {
     uint16_t i = 0;
     for(i = 0; i < length && _u0RX.head != _u0RX.tail; ++i) {
         bytes[i++] = _u0RX.data[_u0RX.tail];
-        _u0RX.tail = (_u0RX.tail + 1) % FCORE_RTX_BUFFERSIZE;
+        _u0RX.tail = (_u0RX.tail + 1) % FCORE_BUFFERSIZE;
     }
     return i;
+}
+
+char fcore_uartReadChar() {
+    if(_u0RX.head == _u0RX.tail) { return '\0'; }
+    char c = _u0RX.data[_u0RX.tail];
+    _u0RX.tail = (_u0RX.tail + 1) % FCORE_BUFFERSIZE;
+    return c;
+}
+
+void fcore_uartClear() {
+    _u0RX.head = _u0RX.tail = 0;
 }
