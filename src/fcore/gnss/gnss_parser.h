@@ -1,5 +1,5 @@
 ///
-/// @file        nmea.c
+/// @file        gnss.h
 /// @brief       FCORE - GNSS// parser for NMEA sentences sent by GNSS modules
 /// @author      Amy Parent
 /// @copyright   2017 Amy Parent
@@ -8,12 +8,13 @@
 #include <stdbool.h>
 
 typedef enum {
-    NMEA_PARSING,
-    NMEA_VALID,
-    NMEA_OVERFLOW,
-    NMEA_INVALID,
-} NMEAStatus;
+    GNSS_PARSING,
+    GNSS_VALID,
+    GNSS_OVERFLOW,
+    GNSS_INVALID,
+    GNSS_NOTGGA,
+} GNSSStatus;
 
-void fcore_nmeaInit();
+extern void fcore_gnssReset();
 
-NMEAStatus fcore_nmeaFeed(char c);
+extern GNSSStatus fcore_gnssFeed(char c);

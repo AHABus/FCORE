@@ -68,7 +68,10 @@ static IRAM void _uartISR() {
         
         while(UART_RXFIFO_LEN(UART0) > 0) {
             uint32_t nextHead = (_u0RX.head + 1) % FCORE_BUFFERSIZE;
-            if(nextHead == _u0RX.tail) { break; }
+            if(nextHead == _u0RX.tail) {
+                _u0RX.tail = (_u0RX.tail + 1) % FCORE_BUFFERSIZE;
+                //break;
+            }
             _u0RX.data[_u0RX.head] = UART_RXFIFO_GET(UART0);
             _u0RX.head = nextHead;
         }
@@ -78,7 +81,10 @@ static IRAM void _uartISR() {
         
         while(UART_RXFIFO_LEN(UART0) > 0) {
             uint32_t nextHead = (_u0RX.head + 1) % FCORE_BUFFERSIZE;
-            if(nextHead == _u0RX.tail) { break; }
+            if(nextHead == _u0RX.tail) {
+                _u0RX.tail = (_u0RX.tail + 1) % FCORE_BUFFERSIZE;
+                //break;
+            }
             _u0RX.data[_u0RX.head] = UART_RXFIFO_GET(UART0);
             _u0RX.head = nextHead;
         }
