@@ -15,6 +15,7 @@
 #include <fcore/fcore.h>
 #include <fcore/buses/uart.h>
 #include <fcore/tasks/gnss.h>
+#include <fcore/tasks/bus.h>
 
 void user_init(void) {
     //uart_set_baud(1, 200);
@@ -23,4 +24,5 @@ void user_init(void) {
     gpio_set_iomux_function(2, IOMUX_GPIO2_FUNC_UART1_TXD);
     fcore_rtxInit(200);
     fcore_startGNSSTask();
+    fcore_startBusTask((FCPayload*)&fcore_payloads[0]);
 }

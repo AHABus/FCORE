@@ -5,12 +5,12 @@
 /// @copyright   2017 Amy Parent
 ///
 #include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
 #include <fcore/fcore.h>
 #include <fcore/tasks/gnss.h>
 #include <fcore/gnss/gnss_parser.h>
 #include <fcore/buses/uart.h>
-#include <stdbool.h>
-#include <string.h>
 #include "FreeRTOS.h"
 #include "task.h"
 
@@ -26,7 +26,8 @@ void fcore_gnssTask(void* parameters) {
         fcore_uartClear();
         vTaskDelay(3000 / portTICK_PERIOD_MS);
         
-        
+
+        taskENTER_CRITICAL();
         for(int i = 0; i < GNSS_MAX_ATTEMPTS; ++i) {
             
             // Reset the GNSS NMEA parser
@@ -39,18 +40,15 @@ void fcore_gnssTask(void* parameters) {
             }
             
             if(state == GNSS_VALID) {
-                char info[64];
-                uint32_t len = snprintf(info, 64, "valid NMEA packet {%d, %d, %d} (%d sats, %d)\r\n",
-                                        FCORE.latitude, FCORE.longitude, FCORE.altitude, FCORE.satellites, FCORE.fixQuality);
-                fcore_rtxWrite((uint8_t*)info, len);
                 break;
             }
         }
+        taskEXIT_CRITICAL();
 
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        vTaskDelay(60000 / portTICK_PERIOD_MS);
     }
 }
 
 extern void fcore_startGNSSTask() {
-    xTaskCreate(&fcore_gnssTask, "fcore_gnss", 256, NULL, 2, NULL);
+    xTaskCreate(&fcore_gnssTask, "fcore_gnss", 256, NULL, PRIORITY_GNSS, NULL);
 }

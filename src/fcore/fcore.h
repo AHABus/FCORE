@@ -7,6 +7,15 @@
 #pragma once
 #include <stdint.h>
 
+/// The amount a time a payload can fail to respond before it is taken off
+/// of the software bus.
+#define FCORE_BUS_MAXATTEMPTS   2
+
+/// The exponential backoff factor for the software bus. Every time a payload
+/// fails to respond, the delay until the next communication attempt is
+/// multiplied by the backoff factor.
+#define FCORE_BUS_BACKOFF       1.2
+
 /// An entry in the payload table.
 typedef struct {
     /// The payload's address on the I2C FCORE Bus.

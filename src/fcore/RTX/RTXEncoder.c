@@ -77,9 +77,10 @@ static uint8_t _writePacketHeader(RTXPacketHeader* header,
     return idx;
 }
 
-static int16_t _writePacketData(RTXCoder* encoder, uint8_t offset, uint16_t toWrite, uint8_t frame[FRAME_SIZE]) {
+static uint16_t _writePacketData(RTXPacketHeader* header, uint8_t offset,
+                                 uint16_t toWrite, uint8_t frame[FRAME_SIZE]) {
     for(uint16_t i = offset; i < FRAME_DATASIZE && toWrite > 0; ++i) {
-        if(!encoder->readCallback(&frame[i], encoder->readData)) { return toWrite - 1; }
+        frame[i] = *(header->data++);
         toWrite -= 1;
     }
     return toWrite;
@@ -93,15 +94,15 @@ int16_t fcoreRTXEncodePacket(RTXCoder* encoder, RTXPacketHeader* header) {
     
     if(header->length == 0) { return 0; }
     
-    uint8_t     frame[FRAME_SIZE];
-    uint16_t    frameOffset = 0;
-    uint16_t    toWrite = header->length;
-    uint16_t    frameCount = 0;
+    static uint8_t  frame[FRAME_SIZE];
+    uint16_t        frameOffset = 0;
+    uint16_t        toWrite = header->length;
+    uint16_t        frameCount = 0;
     
     _clearFrame(frame);
     frameOffset += _writeFrameHeader(encoder, frame);
     frameOffset += _writePacketHeader(header, frameOffset, frame);
-    toWrite = _writePacketData(encoder, frameOffset, toWrite, frame);
+    toWrite = _writePacketData(header, frameOffset, toWrite, frame);
     _writeFEC(frame);
     if(!_writeFrame(encoder, frame)) { return - 1; }
     

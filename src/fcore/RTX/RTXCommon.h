@@ -29,23 +29,21 @@ typedef bool (*RTXWrite)(uint8_t, void*);
 /// Should block if no data is available, but is expected.
 typedef bool (*RTXRead)(uint8_t*, void*);
 
-/// Fixed-point 9.23 bit decimal number.
-typedef int32_t fp823_t;
-
 /// Defines the data required to write a packet.
 typedef struct {
     /// Primary Packet Header.
-    uint8_t     payloadID;
-    uint16_t    length;
+    uint8_t         payloadID;
+    uint16_t        length;
     
     /// Secondary Packet Header.
-    fp823_t     latitude;
-    fp823_t     longitude;
-    uint16_t    altitude;
+    int32_t         latitude;
+    int32_t         longitude;
+    uint16_t        altitude;
+    
+    /// Data
+    const uint8_t*  data;
 } RTXPacketHeader;
 
 typedef struct {
     uint16_t    sequenceNumber;
-    void*       readData;
-    RTXRead     readCallback;
 } RTXCoder;

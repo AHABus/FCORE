@@ -30,6 +30,10 @@ void fcore_gnssReset() {
     _gnssState = STATE_WASTING;
 }
 
+static inline uint32_t _mneaToFP32(float nmea) {
+    return (uint32_t)(nmea * 10000);
+}
+
 static GNSSStatus _gnssParse() {
     _gnssBuffer[_gnssIdx] = '\0';
     
@@ -38,8 +42,8 @@ static GNSSStatus _gnssParse() {
     struct minmea_sentence_gga frame;
     minmea_parse_gga(&frame, _gnssBuffer);
     
-    FCORE.latitude = minmea_rescale(&frame.latitude, 1000);
-    FCORE.longitude = minmea_rescale(&frame.longitude, 1000);
+    FCORE.latitude = _mneaToFP32(minmea_tocoord(&frame.latitude));
+    FCORE.longitude = _mneaToFP32(minmea_tocoord(&frame.longitude));
     FCORE.altitude = minmea_rescale(&frame.altitude, 1);
     
     FCORE.satellites = frame.satellites_tracked;
