@@ -9,6 +9,7 @@ def check_config(cfg)
   
   payload_ids = []
   
+  abort "too many payloads (> 16)" if cfg["payloads"].count > 16
   cfg["payloads"].each do |payload|
     abort "no payload address" if not payload.key? "address"
     abort "no payload name"  if not payload.key? "name"
