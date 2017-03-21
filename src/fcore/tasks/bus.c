@@ -26,12 +26,9 @@ void fcore_busTask(void* parameters) {
     
     uint32_t interval = 60;
     uint32_t attempts = 0;
-    uint32_t actualInterval = interval;
     
     while(true) {
-        vTaskDelay((actualInterval * 1000) / portTICK_PERIOD_MS);
-        
-        // MARK: Make sure clock stretch is large (~40000us worked here)
+        vTaskDelay((interval * 1000) / portTICK_PERIOD_MS);
         
         // First, write 0xff in the tx flag
         taskENTER_CRITICAL();
@@ -75,8 +72,6 @@ void fcore_busTask(void* parameters) {
         taskEXIT_CRITICAL();
         
         attempts = 0;
-        actualInterval = interval;
-        
         fcore_systemSigUp(payloadID);
         continue;
         
@@ -88,7 +83,6 @@ void fcore_busTask(void* parameters) {
             vTaskDelete(NULL);
         } else {
             fcore_systemSigRecovery(payloadID);
-            actualInterval *= FCORE_BUS_BACKOFF;
         }
     }
 }
