@@ -22,6 +22,7 @@ void user_init(void) {
     //xTaskCreate(blinkenRegisterTask, "blinkenRegisterTask", 256, NULL, 2, NULL);
     GPIO.ENABLE_OUT_SET = BIT(2);
     gpio_set_iomux_function(2, IOMUX_GPIO2_FUNC_UART1_TXD);
+    fcore_initBus();
     fcore_rtxInit(200);
     fcore_startGNSSTask();
     fcore_startBusTask((FCPayload*)&fcore_payloads[0]);

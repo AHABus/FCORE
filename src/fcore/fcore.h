@@ -16,6 +16,8 @@
 /// multiplied by the backoff factor.
 #define FCORE_BUS_BACKOFF       1.2
 
+#define FCORE_MAXDATA           512
+
 /// An entry in the payload table.
 typedef struct {
     /// The payload's address on the I2C FCORE Bus.
