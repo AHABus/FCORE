@@ -43,7 +43,7 @@ def write_config(out, config)
   c.puts ""
   c.puts "const FCPayload fcore_payloads[FCORE_PAYLOAD_COUNT] = {"
   config["payloads"].each do |payload|
-    c.puts "    {#{payload["address"]}, \"#{payload["name"]}\", #{payload["priority"]}},"
+    c.puts "    {#{payload["address"]}, \"#{payload["name"]}\", #{payload["priority"]}, STATUS_BOOT},"
   end
   c.puts "};"
   c.close

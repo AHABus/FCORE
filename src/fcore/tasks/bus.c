@@ -6,7 +6,6 @@
 ///
 #include <stdio.h>
 #include <stdbool.h>
-#include <string.h>
 #include <fcore/fcore.h>
 #include <fcore/tasks/bus.h>
 #include <fcore/buses/uart.h>
@@ -15,24 +14,22 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-static RTXCoder encoder;
-
-
 #define BUS_REGTX       0x00
 #define BUS_REGLEN      0x01
 #define BUS_DATA        0x10
 
-static uint8_t busBuffer[FCORE_MAXDATA];
+static uint8_t busBuffer[FCORE_BUS_MAXDATA];
 
 void fcore_busTask(void* parameters) {
-    FCPayload* payload = (FCPayload*)parameters;
+    uint8_t payloadID = (int)parameters;
+    FCPayload* payload = &FCORE.payloads[payloadID];
     
     uint32_t interval = 60;
     uint32_t attempts = 0;
     uint32_t actualInterval = interval;
     
     while(true) {
-        vTaskDelay(actualInterval * 1000 / portTICK_PERIOD_MS);
+        vTaskDelay((actualInterval * 1000) / portTICK_PERIOD_MS);
         
         // MARK: Make sure clock stretch is large (~40000us worked here)
         
@@ -51,7 +48,7 @@ void fcore_busTask(void* parameters) {
         
         // Check that we have less than the max amount of data
         uint16_t length = (reg[0] << 8) | reg[1];
-        if(length > FCORE_MAXDATA) {
+        if(length > FCORE_BUS_MAXDATA) {
             goto fail;
         }
         
@@ -74,28 +71,29 @@ void fcore_busTask(void* parameters) {
         header.altitude = FCORE.altitude;
         header.data = busBuffer;
 
-        fcoreRTXEncodePacket(&encoder, &header);
+        fcoreRTXEncodePacket(&FCORE.rtxEncoder, &header);
         taskEXIT_CRITICAL();
         
         attempts = 0;
         actualInterval = interval;
         
+        fcore_systemSigUp(payloadID);
         continue;
         
     fail:
         taskEXIT_CRITICAL();
         attempts += 1;
-        actualInterval *= FCORE_BUS_BACKOFF;
-        continue;
+        if(attempts >= FCORE_BUS_MAXATTEMPTS) {
+            fcore_systemSigDown(payloadID);
+            vTaskDelete(NULL);
+        } else {
+            fcore_systemSigRecovery(payloadID);
+            actualInterval *= FCORE_BUS_BACKOFF;
+        }
     }
 }
 
-void fcore_initBus() {
-    i2c_init(5, 4);
-    encoder.sequenceNumber = 0;
-}
-
-void fcore_startBusTask(FCPayload* payload) {
-    xTaskCreate(&fcore_busTask, "fcore_bus", 2048,
-                (void*)payload, PRIORITY_PAYLOAD, NULL);
+void fcore_startBusTask(uint8_t payloadIDX) {
+    xTaskCreate(&fcore_busTask, "fcore_bus", 512,
+                (void*)((int)payloadIDX), PRIORITY_PAYLOADBUS, NULL);
 }

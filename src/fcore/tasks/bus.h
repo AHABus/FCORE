@@ -7,6 +7,4 @@
 #pragma once
 #include <fcore/fcore.h>
 
-extern void fcore_initBus();
-
-extern void fcore_startBusTask(FCPayload* payload);
+extern void fcore_startBusTask(uint8_t payloadIDX);

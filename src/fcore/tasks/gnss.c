@@ -17,17 +17,14 @@
 #define GNSS_MAX_ATTEMPTS 4
 
 void fcore_gnssTask(void* parameters) {
-    
-    fcore_uartInit(9600);
-    fcore_rtxWrite((uint8_t*)"FCORE//GNSS TASK INIT\r\n", strlen("FCORE//GNSS TASK INIT\r\n"));
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
-    
     while(true) {
         fcore_uartClear();
         vTaskDelay(3000 / portTICK_PERIOD_MS);
         
 
         taskENTER_CRITICAL();
+        
+        bool foundGGA = false;
         for(int i = 0; i < GNSS_MAX_ATTEMPTS; ++i) {
             
             // Reset the GNSS NMEA parser
@@ -40,15 +37,17 @@ void fcore_gnssTask(void* parameters) {
             }
             
             if(state == GNSS_VALID) {
+                foundGGA = true;
                 break;
             }
         }
+        FCORE.gnssStatus = foundGGA ? STATUS_UP : STATUS_RECOVERY;
         taskEXIT_CRITICAL();
 
-        vTaskDelay(60000 / portTICK_PERIOD_MS);
+        vTaskDelay((FCORE_GNSS_INTERVAL * 1000) / portTICK_PERIOD_MS);
     }
 }
 
-extern void fcore_startGNSSTask() {
+extern void fcore_startGNSSTask(void) {
     xTaskCreate(&fcore_gnssTask, "fcore_gnss", 256, NULL, PRIORITY_GNSS, NULL);
 }
