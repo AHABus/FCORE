@@ -13,6 +13,7 @@ def check_config(cfg)
     abort "no payload address" if not payload.key? "address"
     abort "no payload name"  if not payload.key? "name"
     abort "no payload priority"  if not payload.key? "priority"
+    abort "invalid priority" if payload["priority"] < 1 or payload["priority"] > 3
     abort "duplicate payload addresses"  if payload_ids.include? payload["address"]
     abort "invalid payload address" if payload["address"] < 10 or payload["address"] > 127
     payload_ids.push(payload["address"])
