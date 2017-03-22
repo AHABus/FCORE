@@ -4,12 +4,14 @@
 /// @author      Amy Parent
 /// @copyright   2017 Amy Parent
 ///
-#include <fcore/buses/uart.h>
 #include <stdbool.h>
+#include <fcore/buses/uart.h>
 #include "common_macros.h"
-#include "esp/interrupts.h"
+#include "espressif/esp_common.h"
 #include "espressif/esp8266/ets_sys.h"
 #include "espressif/esp8266/eagle_soc.h"
+#include "esp8266.h"
+#include "esp/interrupts.h"
 #include "esp/uart.h"
 #include "uart_register.h"
 
@@ -160,6 +162,13 @@ void fcore_rtxInit(uint16_t baudRate) {
     SET_PERI_REG_MASK(UART_CONF0(UART1), (3 << UART_BIT_NUM_S));
     CLEAR_PERI_REG_MASK(UART_CONF0(UART1), UART_PARITY_EN);
     
+    // Make sure pin D4 is set to output UART
+    //GPIO.ENABLE_OUT_SET = BIT(2);
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_U1TXD_BK);
+    PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
+    
+    //gpio_set_iomux_function(2, IOMUX_GPIO2_FUNC_UART1_TXD);
+    
     _xt_isr_unmask(1 << INUM_UART);
 }
 
@@ -169,6 +178,14 @@ void fcore_uartInit(uint16_t baudRate) {
     
     uint32_t clkdiv = APB_CLK_FREQ / baudRate;
     WRITE_PERI_REG(UART_CLKDIV(UART0), clkdiv);
+    
+    // Set Tx/Rx pins to the proper functions
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD);
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD);
+
+    // Disable pullup on TX pin, enable on RX pin
+    PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
+    PIN_PULLUP_EN(PERIPHS_IO_MUX_U0RXD_U);
     
     // We could try a general purpose, set-your-own-settings system, but we can
     // simplify things a lot if we go with 8N1, which is enough for what we do.
