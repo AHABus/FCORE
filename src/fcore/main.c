@@ -6,9 +6,8 @@
 ///
 #include <stdio.h>
 #include <string.h>
-#include "FreeRTOS.h"
-
 #include <fcore/fcore.h>
+#include "FreeRTOS.h"
 
 void user_init(void) {
     fcore_systemInit();

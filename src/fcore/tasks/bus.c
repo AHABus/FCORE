@@ -24,7 +24,7 @@ void fcore_busTask(void* parameters) {
     uint8_t payloadID = (int)parameters;
     FCPayload* payload = &FCORE.payloads[payloadID];
     
-    uint32_t interval = 60;
+    uint32_t interval = 30 * payload->priority;
     uint32_t attempts = 0;
     
     while(true) {

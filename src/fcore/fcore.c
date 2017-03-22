@@ -15,10 +15,11 @@
 
 FCSystem FCORE;
 
-static void _sendStartMessage(const char* status) {
+static void _sendStartMessage(const char* sys, const char* status) {
     
-    static char message[64];
-    uint16_t length = snprintf(message, 64, "FCORE//SYS_INIT :: %s", status);
+    static char message[128];
+    uint16_t length = snprintf(message, 128, "FCORE//SYS_INIT :: %s (%s)",
+                               status, sys);
     
     RTXPacketHeader header;
     header.payloadID = 0x00;
@@ -47,24 +48,29 @@ void fcore_systemInit(void) {
     fcore_rtxInit(200);
     
     if(!fcore_startControllerTask()) {
-        _sendStartMessage("CTRL_STARTFAIL");
+        _sendStartMessage("CTRL", "STARTFAIL");
         return;
     }
     
     if(!fcore_startGNSSTask()) {
-        _sendStartMessage("GNSS_STARTFAIL");
+        _sendStartMessage("GNSS", "STARTFAIL");
         return;
     }
     
     for(uint8_t i = 0; i < FCORE_PAYLOAD_COUNT; ++i) {
         FCORE.payloads[i] = fcore_payloads[i];
         FCORE.payloads[i].status = STATUS_BOOT;
+        
+        // We need to check and normalise the priority of each payload
+        if(FCORE.payloads[i].priority > 3) { FCORE.payloads[i].priority = 3; }
+        if(FCORE.payloads[i].priority < 1) { FCORE.payloads[i].priority = 1; }
+        
         if(!fcore_startBusTask(i)) {
-            _sendStartMessage("BUS_STARTFAIL");
+            _sendStartMessage(FCORE.payloads[i].name, "BUS_STARTFAIL");
             return;
         }
     }
-    _sendStartMessage("BOOT_DONE");
+    _sendStartMessage(FCORE_MISSION_NAME, "BOOT_DONE");
 }
 
 void fcore_systemSigUp(uint8_t index) {
