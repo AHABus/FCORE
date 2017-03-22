@@ -48,6 +48,7 @@ void fcore_gnssTask(void* parameters) {
     }
 }
 
-extern void fcore_startGNSSTask(void) {
-    xTaskCreate(&fcore_gnssTask, "fcore_gnss", 256, NULL, PRIORITY_GNSS, NULL);
+bool fcore_startGNSSTask(void) {
+    return xTaskCreate(&fcore_gnssTask, "fcore_gnss", 256,
+                       NULL, PRIORITY_GNSS, NULL) == pdPASS;
 }

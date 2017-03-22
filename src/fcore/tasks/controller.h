@@ -6,4 +6,4 @@
 ///
 #pragma once
 
-extern void fcore_startControllerTask(void);
+extern bool fcore_startControllerTask(void);

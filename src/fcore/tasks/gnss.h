@@ -6,4 +6,4 @@
 ///
 #pragma once
 
-extern void fcore_startGNSSTask(void);
+extern bool fcore_startGNSSTask(void);

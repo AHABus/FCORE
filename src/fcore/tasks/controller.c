@@ -72,6 +72,7 @@ int8_t fcore_createStatus(uint8_t buffer[100]) {
 void fcore_controllerTask(void* parameters) {
     
     while(true) {
+        vTaskDelay((FCORE_CONT_INTERVAL * 1000) / portTICK_PERIOD_MS);
         
         taskENTER_CRITICAL();
 
@@ -86,12 +87,10 @@ void fcore_controllerTask(void* parameters) {
 
         fcoreRTXEncodePacket(&FCORE.rtxEncoder, &header);
         taskEXIT_CRITICAL();
-        
-        vTaskDelay((FCORE_CONT_INTERVAL * 1000) / portTICK_PERIOD_MS);
     }
 }
 
-void fcore_startControllerTask(void) {
-    xTaskCreate(&fcore_controllerTask, "fcore_bus", 256,
-                NULL, PRIORITY_CONTROLLER, NULL);
+bool fcore_startControllerTask(void) {
+    return xTaskCreate(&fcore_controllerTask, "fcore_bus", 256,
+                       NULL, PRIORITY_CONTROLLER, NULL) == pdPASS;
 }

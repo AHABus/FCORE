@@ -7,4 +7,4 @@
 #pragma once
 #include <fcore/fcore.h>
 
-extern void fcore_startBusTask(uint8_t payloadIDX);
+extern bool fcore_startBusTask(uint8_t payloadIDX);

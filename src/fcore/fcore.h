@@ -27,7 +27,7 @@
 #define FCORE_BUS_MAXDATA       512
 
 /// The interval at which the controller task runs and sends health messages.
-#define FCORE_CONT_INTERVAL     30
+#define FCORE_CONT_INTERVAL     120
 
 typedef enum {
     STATUS_BOOT      = 'B',
@@ -37,9 +37,9 @@ typedef enum {
 } FCStatus;
 
 typedef enum {
-    PRIORITY_CONTROLLER,
-    PRIORITY_GNSS,
     PRIORITY_PAYLOADBUS,
+    PRIORITY_GNSS,
+    PRIORITY_CONTROLLER,
 } FCPriority;
 
 /// An entry in the payload table.

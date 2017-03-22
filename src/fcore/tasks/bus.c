@@ -87,7 +87,7 @@ void fcore_busTask(void* parameters) {
     }
 }
 
-void fcore_startBusTask(uint8_t payloadIDX) {
-    xTaskCreate(&fcore_busTask, "fcore_bus", 512,
-                (void*)((int)payloadIDX), PRIORITY_PAYLOADBUS, NULL);
+bool fcore_startBusTask(uint8_t payloadIDX) {
+    return xTaskCreate(&fcore_busTask, "fcore_bus", 512, (void*)((int)payloadIDX),
+                       PRIORITY_PAYLOADBUS, NULL) == pdPASS;
 }
