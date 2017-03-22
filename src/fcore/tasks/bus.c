@@ -50,8 +50,18 @@ void fcore_busTask(void* parameters) {
         }
         
         // Read in the data
-        if(!i2c_slave_read(payload->address, BUS_DATA, busBuffer, length)) {
-            goto fail;
+        uint16_t readBytes = 0;
+        while(readBytes < length) {
+            uint8_t chunkSize = length - readBytes;
+            if(chunkSize <= 0) { break; }
+            if(chunkSize > 32) { chunkSize = 32; }
+            if(!i2c_slave_read(payload->address,
+                               BUS_DATA + readBytes,
+                               busBuffer + readBytes,
+                               chunkSize)) {
+                goto fail;
+            }
+            readBytes += chunkSize;
         }
         
         // close the communication
