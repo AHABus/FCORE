@@ -23,12 +23,12 @@ void fcore_gnssTask(void* parameters) {
         
 
         taskENTER_CRITICAL();
-        
-        bool foundGGA = false;
+
+        GNSSStatus state;
         for(int i = 0; i < GNSS_MAX_ATTEMPTS; ++i) {
             
             // Reset the GNSS NMEA parser
-            GNSSStatus state = GNSS_PARSING;
+            state = GNSS_PARSING;
             fcore_gnssReset();
             
             // Get the next sentence from UART0
@@ -37,11 +37,20 @@ void fcore_gnssTask(void* parameters) {
             }
             
             if(state == GNSS_VALID) {
-                foundGGA = true;
                 break;
             }
         }
-        FCORE.gnssStatus = foundGGA ? STATUS_UP : STATUS_RECOVERY;
+        switch(state) {
+            case GNSS_VALID:
+                FCORE.gnssStatus = STATUS_UP;
+                break;
+            case GNSS_NOTGGA:
+                FCORE.gnssStatus = STATUS_RECOVERY;
+                break;
+            default:
+                FCORE.gnssStatus = STATUS_DOWN;
+                break;
+        }
         taskEXIT_CRITICAL();
 
         vTaskDelay((FCORE_GNSS_INTERVAL * 1000) / portTICK_PERIOD_MS);

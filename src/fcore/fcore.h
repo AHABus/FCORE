@@ -12,20 +12,6 @@
 /// receiver.
 #define FCORE_GNSS_INTERVAL     20
 
-/// The amount a time a payload can fail to respond before it is taken off
-/// of the software bus.
-#define FCORE_BUS_MAXATTEMPTS   2
-
-/// The exponential backoff factor for the software bus. Every time a payload
-/// fails to respond, the delay until the next communication attempt is
-/// multiplied by the backoff factor.
-#define FCORE_BUS_BACKOFF       1.2
-
-/// The maximum number of bytes a payload is allowed to return at once. 
-/// Returning more than [FCORE_BUS_MAXDATA] is treated as an error, and the
-/// partial received data is discarded.
-#define FCORE_BUS_MAXDATA       512
-
 /// The interval at which the controller task runs and sends health messages.
 #define FCORE_CONT_INTERVAL     120
 

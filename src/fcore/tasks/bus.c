@@ -24,8 +24,7 @@ void fcore_busTask(void* parameters) {
     uint8_t payloadID = (int)parameters;
     FCPayload* payload = &FCORE.payloads[payloadID];
     
-    uint32_t interval = 30 * payload->priority;
-    uint32_t attempts = 0;
+    uint32_t interval = FCORE_BUS_INTERVAL * payload->priority;
     
     while(true) {
         vTaskDelay((interval * 1000) / portTICK_PERIOD_MS);
@@ -66,9 +65,7 @@ void fcore_busTask(void* parameters) {
         
         // close the communication
         uint8_t stop[2] = {BUS_REGTX, 0x00};
-        if(!i2c_slave_write(payload->address, stop, 2)) {
-            goto fail;
-        }
+        if(!i2c_slave_write(payload->address, stop, 2));
         
         RTXPacketHeader header;
         header.payloadID = payload->address;
@@ -81,19 +78,13 @@ void fcore_busTask(void* parameters) {
         fcoreRTXEncodePacket(&FCORE.rtxEncoder, &header);
         taskEXIT_CRITICAL();
         
-        attempts = 0;
         fcore_systemSigUp(payloadID);
         continue;
         
     fail:
+        i2c_slave_write(payload->address, stop, 2);
         taskEXIT_CRITICAL();
-        attempts += 1;
-        if(attempts >= FCORE_BUS_MAXATTEMPTS) {
-            fcore_systemSigDown(payloadID);
-            vTaskDelete(NULL);
-        } else {
-            fcore_systemSigRecovery(payloadID);
-        }
+        fcore_systemSigRecovery(payloadID);
     }
 }
 
