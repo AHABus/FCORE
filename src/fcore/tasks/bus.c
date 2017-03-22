@@ -6,6 +6,7 @@
 ///
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include <fcore/fcore.h>
 #include <fcore/tasks/bus.h>
 #include <fcore/buses/uart.h>
@@ -26,8 +27,11 @@ void fcore_busTask(void* parameters) {
     
     uint32_t interval = FCORE_BUS_INTERVAL * payload->priority;
     
+    // Try to spread the tasks a bit over the available time spam
+    vTaskDelay((((payloadID+1) * (FCORE_BUS_INTERVAL / FCORE_PAYLOAD_COUNT)) * 1000)
+               / portTICK_PERIOD_MS);
+    
     while(true) {
-        vTaskDelay((interval * 1000) / portTICK_PERIOD_MS);
         
         // First, write 0xff in the tx flag
         taskENTER_CRITICAL();
@@ -51,7 +55,7 @@ void fcore_busTask(void* parameters) {
         // Read in the data
         uint16_t readBytes = 0;
         while(readBytes < length) {
-            uint8_t chunkSize = length - readBytes;
+            uint16_t chunkSize = length - readBytes;
             if(chunkSize <= 0) { break; }
             if(chunkSize > 32) { chunkSize = 32; }
             if(!i2c_slave_read(payload->address,
@@ -76,15 +80,19 @@ void fcore_busTask(void* parameters) {
         header.data = busBuffer;
 
         fcoreRTXEncodePacket(&FCORE.rtxEncoder, &header);
+        //fcore_rtxWrite(busBuffer, length);
         taskEXIT_CRITICAL();
         
         fcore_systemSigUp(payloadID);
+
+        vTaskDelay((interval * 1000) / portTICK_PERIOD_MS);
         continue;
         
     fail:
         i2c_slave_write(payload->address, stop, 2);
         taskEXIT_CRITICAL();
         fcore_systemSigRecovery(payloadID);
+        vTaskDelay((interval * 1000) / portTICK_PERIOD_MS);
     }
 }
 
