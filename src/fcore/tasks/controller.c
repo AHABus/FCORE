@@ -39,8 +39,8 @@ static inline uint8_t _writePID(uint8_t idx, uint8_t id, uint8_t buffer[BUFFER_S
     uint8_t low = (id & 0x0f);
     
     buffer[idx++] = 'P';
-    buffer[idx++] = (high > 0x09) ? ('A' + (high - 0x09)) : ('0' + high);
-    buffer[idx++] = (low > 0x09) ? ('A' + (low - 0x09)) : ('0' + low);
+    buffer[idx++] = (high > 0x09) ? ('A' + (high - 0x0A)) : ('0' + high);
+    buffer[idx++] = (low > 0x09) ? ('A' + (low - 0x0A)) : ('0' + low);
     buffer[idx++] = '/';
     
     return idx;

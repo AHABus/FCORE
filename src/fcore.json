@@ -4,12 +4,12 @@
         {
             "address":  10,
             "name":     "zero-mass spectrometer",
-            "priority": 1
+            "priority": 2
         },
         {
             "address":  20,
             "name":     "thermometer",
-            "priority": 2
+            "priority": 1
         }
     ]
 }

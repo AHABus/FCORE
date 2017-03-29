@@ -11,7 +11,6 @@
 #define PROTOCOL_VERSION    0x01
 
 #define FRAME_SIZE          256
-#define FRAME_BUFFER        (FRAME_SIZE+1)
 #define FRAME_HEADERSIZE    4
 #define FRAME_DATASIZE      224
 

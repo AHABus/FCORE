@@ -22,9 +22,8 @@ static inline void _clearFrame(uint8_t frame[FRAME_SIZE]) {
 
 // Write a frame using the encoder's write callback.
 static inline bool _writeFrame(RTXCoder* encoder, uint8_t frame[FRAME_SIZE]) {
-    // Then write the frame itself
-    static const uint8_t syncByte = 0xAA;
-    fcore_rtxWrite(&syncByte, 1);
+    static const uint8_t syncBytes[5] = {0xAA, 0xAA, 0xAA, 0xAA, 0xAA};
+    fcore_rtxWrite(&syncBytes, 5);
     fcore_rtxWrite(frame, FRAME_SIZE);
     return true;
 }

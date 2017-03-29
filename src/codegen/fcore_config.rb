@@ -23,7 +23,7 @@ def bytes(packetBytes)
 end
 
 def calc_core_freq(n1, n2, n3, fs)
-  return 0.8 * ( (BYPS - fs) / (n1 + (n2/2.0) + (n3/3.0)) )
+  return 0.9 * ( (BYPS - fs) / (n1 + (n2/2.0) + (n3/3.0)) )
 end
 
 def check_config(cfg)
