@@ -8,6 +8,10 @@
 #include <stdint.h>
 #include <fcore/rtx/RTXEncoder.h>
 
+// If defined, this enables the radio debug mode, which corrupts random bytes
+//#define FCORE_RTX_DEBUG
+#define FCORE_RTX_DEBUGRATE     (1.0-(18.0/256.0))
+
 /// The interval at which FCORE update its internal location using the GNSS
 /// receiver.
 #define FCORE_GNSS_INTERVAL     20

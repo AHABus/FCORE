@@ -5,6 +5,8 @@
 /// @copyright   2017 Amy Parent
 ///
 #include <stdbool.h>
+#include <stdlib.h>
+#include <fcore/fcore.h>
 #include <fcore/buses/uart.h>
 #include "common_macros.h"
 #include "espressif/esp_common.h"
@@ -215,15 +217,20 @@ void fcore_uartStop() {
     WRITE_PERI_REG(UART_INT_ENA(UART0), 0x0000);
 }
 
-static void _uartWrite(int uart, volatile FCBuffer* buf,
-                       const uint8_t* bytes, uint32_t length) {
+static void _uartWrite(int uart, volatile FCBuffer* buf, const uint8_t* bytes, uint32_t length) {
     if(length > FCORE_BUFFERSIZE) { return; }
     while(fcore_rtxAvailable() < length) {}
 
     _xt_isr_mask(1 << INUM_UART);
     for(uint32_t i = 0; i < length; ++i) {
         uint32_t nextHead = (buf->head + 1) % FCORE_BUFFERSIZE;
-        buf->data[buf->head] = bytes[i];
+        uint8_t byte = bytes[i];
+#ifdef FCORE_RTX_DEBUG
+        if(rand() > FCORE_RTX_DEBUGRATE * RAND_MAX) {
+            byte = (byte ^ (uint8_t)rand());
+        }
+#endif
+        buf->data[buf->head] = byte;
         buf->head = nextHead;
     }
     _xt_isr_unmask(1 << INUM_UART);
