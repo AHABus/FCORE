@@ -21,6 +21,16 @@
 
 static uint8_t busBuffer[FCORE_BUS_MAXDATA];
 
+static inline void closeBus(uint8_t address) {
+    static uint8_t stop[2] = {BUS_REGTX, 0x00};
+    i2c_slave_write(address, stop, 2);
+}
+
+static inline bool openBus(uint8_t address) {
+    static uint8_t start[2] = {BUS_REGTX, 0xff};
+    return i2c_slave_write(address, start, 2);
+}
+
 void fcore_busTask(void* parameters) {
     uint8_t payloadID = (int)parameters;
     FCPayload* payload = &FCORE.payloads[payloadID];
@@ -35,8 +45,7 @@ void fcore_busTask(void* parameters) {
         
         // First, write 0xff in the tx flag
         taskENTER_CRITICAL();
-        uint8_t start[2] = {BUS_REGTX, 0xff};
-        if(!i2c_slave_write(payload->address, start, 2)) {
+        if(!openBus(payload->address)) {
             goto down;
         }
         
@@ -71,6 +80,8 @@ void fcore_busTask(void* parameters) {
             readBytes += chunkSize;
         }
         
+        closeBus(payload->address);
+        
         RTXPacketHeader header;
         header.payloadID = payload->address;
         header.length = length;
@@ -83,20 +94,20 @@ void fcore_busTask(void* parameters) {
         
     success:
         fcore_systemSigUp(payloadID);
+        closeBus(payload->address);
         goto end;
         
     down:
         fcore_systemSigDown(payloadID);
+        closeBus(payload->address);
         goto end;
     
     recovering:
         fcore_systemSigRecovery(payloadID);
+        closeBus(payload->address);
         goto end;
         
     end:
-        // close the communication
-        uint8_t stop[2] = {BUS_REGTX, 0x00};
-        i2c_slave_write(payload->address, stop, 2);
         taskEXIT_CRITICAL();
         vTaskDelay((interval * 1000) / portTICK_PERIOD_MS);
     }
