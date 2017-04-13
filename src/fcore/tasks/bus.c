@@ -37,19 +37,23 @@ void fcore_busTask(void* parameters) {
         taskENTER_CRITICAL();
         uint8_t start[2] = {BUS_REGTX, 0xff};
         if(!i2c_slave_write(payload->address, start, 2)) {
-            goto fail;
+            goto down;
         }
         
         // Then read the length;
         uint8_t reg[2];
         if(!i2c_slave_read(payload->address, BUS_REGLEN, reg, 2)) {
-            goto fail;
+            goto down;
         }
         
         // Check that we have less than the max amount of data
         uint16_t length = (reg[0] << 8) | reg[1];
         if(length > FCORE_BUS_MAXDATA) {
-            goto fail;
+            goto recovering;
+        }
+        
+        if(length == 0) {
+            goto success;
         }
         
         // Read in the data
@@ -62,7 +66,7 @@ void fcore_busTask(void* parameters) {
                                BUS_DATA + readBytes,
                                busBuffer + readBytes,
                                chunkSize)) {
-                goto fail;
+                goto down;
             }
             readBytes += chunkSize;
         }
@@ -80,18 +84,22 @@ void fcore_busTask(void* parameters) {
         header.data = busBuffer;
 
         fcoreRTXEncodePacket(&FCORE.rtxEncoder, &header);
-        //fcore_rtxWrite(busBuffer, length);
-        taskEXIT_CRITICAL();
         
+    success:
         fcore_systemSigUp(payloadID);
-
-        vTaskDelay((interval * 1000) / portTICK_PERIOD_MS);
-        continue;
+        goto end;
         
-    fail:
+    down:
+        fcore_systemSigDown(payloadID);
+        goto end;
+    
+    recovering:
+        fcore_systemSigRecovery(payloadID);
+        goto end;
+        
+    end:
         i2c_slave_write(payload->address, stop, 2);
         taskEXIT_CRITICAL();
-        fcore_systemSigRecovery(payloadID);
         vTaskDelay((interval * 1000) / portTICK_PERIOD_MS);
     }
 }
