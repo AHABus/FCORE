@@ -71,10 +71,6 @@ void fcore_busTask(void* parameters) {
             readBytes += chunkSize;
         }
         
-        // close the communication
-        uint8_t stop[2] = {BUS_REGTX, 0x00};
-        if(!i2c_slave_write(payload->address, stop, 2));
-        
         RTXPacketHeader header;
         header.payloadID = payload->address;
         header.length = length;
@@ -98,6 +94,8 @@ void fcore_busTask(void* parameters) {
         goto end;
         
     end:
+        // close the communication
+        uint8_t stop[2] = {BUS_REGTX, 0x00};
         i2c_slave_write(payload->address, stop, 2);
         taskEXIT_CRITICAL();
         vTaskDelay((interval * 1000) / portTICK_PERIOD_MS);
