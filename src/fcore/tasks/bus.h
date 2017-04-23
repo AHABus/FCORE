@@ -7,4 +7,5 @@
 #pragma once
 #include <fcore/fcore.h>
 
+/// Creates a bus task for the payload at [payloadIDX].
 extern bool fcore_startBusTask(uint8_t payloadIDX);

@@ -12,17 +12,17 @@
 #include "task.h"
 
 // We need a compact, but readable log message system. (even if the packet
-// system fails). So ASCII, with one letter for function, one for index, and
+// system fails). So ASCII, with one letter for subsystem, two for index, and
 // one character for status:
 //
 // Functions: G (GNSS), Pi (Payload #i)
 // Status:
 //      B (booting, set before first contact with the paylaod)
 //      U (up, everything okay)
-//      R (error, but still attempting recovery)
-//      D (down (payload kicked out of bus))
+//      R (recovering - the payload couldn't be polled)
+//      D (down - the payload tried to transmit more data than allowed)
 //
-// Example item: $G/U,$P5f/D,$P0A/U,$P0B/U,$P10/E
+// Example item: G/U,P5f/D,P0A/U,P0B/U,P10/E
 //      GNSS is up,
 //      Payload 0x5f is down and done with,
 //      Payloads 0x0A and 0x0B are up,
@@ -32,6 +32,8 @@
 static uint8_t _statusBuffer[BUFFER_SIZE];
 static const char* _statusHeader = "FCORE//SYS_HEALTH :: ";
 
+// Write a payload prefix (P$$/) to the status buffer, where $$ is the payload
+// ID in hexadecimal.
 static inline uint8_t _writePID(uint8_t idx, uint8_t id, uint8_t buffer[BUFFER_SIZE]) {
     if(idx >= (BUFFER_SIZE-5)) { return idx; }
     
@@ -69,11 +71,15 @@ int8_t fcore_createStatus(uint8_t buffer[100]) {
     return idx;
 }
 
+// The controller task's routine.
 void fcore_controllerTask(void* parameters) {
     
+    // Main task loop.
     while(true) {
         vTaskDelay((FCORE_CONT_INTERVAL * 1000) / portTICK_PERIOD_MS);
         
+        // Critical to avoid being interrupted while the packet is being
+        // put on the radio queue, or while we're reading the payload statuses.
         taskENTER_CRITICAL();
 
         int8_t length = fcore_createStatus(_statusBuffer);

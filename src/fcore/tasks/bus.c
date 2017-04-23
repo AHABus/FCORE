@@ -21,26 +21,34 @@
 
 static uint8_t busBuffer[FCORE_BUS_MAXDATA];
 
+// Opens the bus connection with a payload (write 0xFF in REG_TX).
 static inline void closeBus(uint8_t address) {
     static uint8_t stop[2] = {BUS_REGTX, 0x00};
     i2c_slave_write(address, stop, 2);
 }
 
+// Close the bus connection with a payload (write 0x00 in REG_TX).
 static inline bool openBus(uint8_t address) {
     static uint8_t start[2] = {BUS_REGTX, 0xff};
     return i2c_slave_write(address, start, 2);
 }
 
+// The Payload Bus task routine
 void fcore_busTask(void* parameters) {
+    
+    // Initialise the bus task
     uint8_t payloadID = (int)parameters;
     FCPayload* payload = &FCORE.payloads[payloadID];
-    
     uint32_t interval = FCORE_BUS_INTERVAL * payload->priority;
     
-    // Try to spread the tasks a bit over the available time spam
-    vTaskDelay((((payloadID+1) * (FCORE_BUS_INTERVAL / FCORE_PAYLOAD_COUNT)) * 1000)
-               / portTICK_PERIOD_MS);
+    // We want to avoid all of the tasks firing on "resonnant" intervals - this
+    // would cause big spikes in packet creation. To avoid that, delay the first
+    // polling of each payload, so that a payload is first polled every
+    // FCORE_BUS_INTERVAL / FCORE_PAYLOAD_COUNT seconds after boot.
+    vTaskDelay((((payloadID+1) * (FCORE_BUS_INTERVAL / FCORE_PAYLOAD_COUNT))
+                * 1000) / portTICK_PERIOD_MS);
     
+    // Main task loop.
     while(true) {
         
         // First, write 0xff in the tx flag
@@ -61,11 +69,15 @@ void fcore_busTask(void* parameters) {
             goto recovering;
         }
         
+        // If there's no data, let's not create a packet.
         if(length == 0) {
             goto success;
         }
         
-        // Read in the data
+        // Read in the data. We read in 32-byte chunks to ensure that devices
+        // with small I2C buffers (Arduino boards for example) can send
+        // everything. If any transfer goes wrong, the payload is marked as
+        // down.
         uint16_t readBytes = 0;
         while(readBytes < length) {
             uint16_t chunkSize = length - readBytes;
@@ -80,8 +92,7 @@ void fcore_busTask(void* parameters) {
             readBytes += chunkSize;
         }
         
-        closeBus(payload->address);
-        
+        // Finally, we send the recovered data in a packet.
         RTXPacketHeader header;
         header.payloadID = payload->address;
         header.length = length;
@@ -94,20 +105,21 @@ void fcore_busTask(void* parameters) {
         
     success:
         fcore_systemSigUp(payloadID);
-        closeBus(payload->address);
         goto end;
         
     down:
         fcore_systemSigDown(payloadID);
-        closeBus(payload->address);
         goto end;
     
     recovering:
         fcore_systemSigRecovery(payloadID);
-        closeBus(payload->address);
         goto end;
         
     end:
+        // Whatever the outcome of the transfer, we attempt to clear the
+        // connection flag on the payload to allow it to write to its data
+        // registers
+        closeBus(payload->address);
         taskEXIT_CRITICAL();
         vTaskDelay((interval * 1000) / portTICK_PERIOD_MS);
     }

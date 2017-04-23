@@ -37,8 +37,8 @@ static inline uint32_t _mneaToFP32(float nmea) {
 static GNSSStatus _gnssParse() {
     _gnssBuffer[_gnssIdx] = '\0';
     
-    if(!minmea_check(_gnssBuffer, false)) { return GNSS_INVALID; }
-    if(minmea_sentence_id(_gnssBuffer, false) != MINMEA_SENTENCE_GGA) { return GNSS_NOTGGA; }
+    if(!minmea_check(_gnssBuffer, true)) { return GNSS_INVALID; }
+    if(minmea_sentence_id(_gnssBuffer, true) != MINMEA_SENTENCE_GGA) { return GNSS_NOTGGA; }
     struct minmea_sentence_gga frame;
     minmea_parse_gga(&frame, _gnssBuffer);
     
@@ -46,8 +46,6 @@ static GNSSStatus _gnssParse() {
     FCORE.longitude = _mneaToFP32(minmea_tocoord(&frame.longitude));
     FCORE.altitude = minmea_rescale(&frame.altitude, 1);
     
-    FCORE.satellites = frame.satellites_tracked;
-    FCORE.fixQuality = frame.fix_quality;
     return GNSS_VALID;
 }
 

@@ -5,7 +5,6 @@
 /// @copyright   2017 Amy Parent
 ///
 #include <stdio.h>
-#include <string.h>
 #include <fcore/fcore.h>
 #include "FreeRTOS.h"
 

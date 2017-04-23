@@ -6,4 +6,5 @@
 ///
 #pragma once
 
+/// Creates the system health/controller task.
 extern bool fcore_startControllerTask(void);

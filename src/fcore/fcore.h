@@ -19,6 +19,7 @@
 /// The interval at which the controller task runs and sends health messages.
 #define FCORE_CONT_INTERVAL     120
 
+/// Payload statuses - simple to use direct char values than lookup tables.
 typedef enum {
     STATUS_BOOT      = 'B',
     STATUS_UP        = 'U',
@@ -26,10 +27,11 @@ typedef enum {
     STATUS_DOWN      = 'D',
 } FCStatus;
 
+/// The FreeRTOS priorities for each task - not the same as payload priorities.
 typedef enum {
-    PRIORITY_PAYLOADBUS,
-    PRIORITY_GNSS,
-    PRIORITY_CONTROLLER,
+    PRIORITY_PAYLOADBUS = 1,
+    PRIORITY_GNSS       = 5,
+    PRIORITY_CONTROLLER = 10,
 } FCPriority;
 
 /// An entry in the payload table.
@@ -48,26 +50,33 @@ typedef struct {
 #include "__fcore_cfg.h"
 #undef FCORE_MAIN_INCLUDE
 
-
+/// A struct that holds the shared data required for every part of FCORE to run
 typedef struct {
+    /// The last known GNSS co-ordinates, times 10000.
     int32_t         latitude;
     int32_t         longitude;
+    /// The last known altitude of the platform.
     uint16_t        altitude;
-    uint8_t         satellites;
-    uint8_t         fixQuality;
     
+    /// The Radio encoder, used to keep track of the last frame sequence number.
     RTXCoder        rtxEncoder;
     
+    /// Last known statuses of FCORE components.
     FCStatus        gnssStatus;
     FCPayload       payloads[FCORE_PAYLOAD_COUNT];
 } FCSystem;
 
+/// The shared system data.
 extern FCSystem FCORE;
 
+/// Starts FCORE -- boots FreeRTOS tasks and sends the system boot packet.
 extern void fcore_systemInit(void);
 
+/// Mark the payload at [index] as Up.
 extern void fcore_systemSigUp(uint8_t index);
 
+/// Mark the payload at [index] as Recovering.
 extern void fcore_systemSigRecovery(uint8_t index);
 
+/// Mark the payload at [index] as Down.
 extern void fcore_systemSigDown(uint8_t index);

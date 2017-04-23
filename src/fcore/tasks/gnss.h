@@ -6,4 +6,5 @@
 ///
 #pragma once
 
+/// Creates the GNSS tracker/parser task.
 extern bool fcore_startGNSSTask(void);
