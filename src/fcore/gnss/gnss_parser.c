@@ -30,10 +30,12 @@ void fcore_gnssReset() {
     _gnssState = STATE_WASTING;
 }
 
+/// Encodes a floating-point co-ordinates as a fixed-point number in an uint32.
 static inline uint32_t _mneaToFP32(float nmea) {
     return (uint32_t)(nmea * 10000);
 }
 
+/// Parses a NMEA sentence using minmea.
 static GNSSStatus _gnssParse() {
     _gnssBuffer[_gnssIdx] = '\0';
     
@@ -42,6 +44,8 @@ static GNSSStatus _gnssParse() {
     struct minmea_sentence_gga frame;
     minmea_parse_gga(&frame, _gnssBuffer);
     
+    // If sanity checks passed, we can write the new position to the FCORE
+    // shared data struct.
     FCORE.latitude = _mneaToFP32(minmea_tocoord(&frame.latitude));
     FCORE.longitude = _mneaToFP32(minmea_tocoord(&frame.longitude));
     FCORE.altitude = minmea_rescale(&frame.altitude, 1);
@@ -52,8 +56,9 @@ static GNSSStatus _gnssParse() {
 GNSSStatus fcore_gnssFeed(char c) {
     
     switch(_gnssState) {
+        
+        // Go to INSENTENCE when we find a sentence start ($)
         case STATE_WASTING:
-            //fcore_rtxWrite((uint8_t*)"**W\r\n", 5);
             if(c == '$') {
                 _gnssBuffer[_gnssIdx++] = '$';
                 _gnssState = STATE_INSENTENCE;
@@ -61,9 +66,9 @@ GNSSStatus fcore_gnssFeed(char c) {
                 _gnssState = STATE_WASTING;
             }
             break;
-            
+        
+        // Stay in sentence until we find carriage return, or the buffer is full
         case STATE_INSENTENCE:
-            //fcore_rtxWrite((uint8_t*)"**I\r\n", 5);
             if(c == '\r') {
                 _gnssState = STATE_ENDING;
             }
@@ -76,21 +81,20 @@ GNSSStatus fcore_gnssFeed(char c) {
                 }
             }
             break;
-            
+        
+        // A valid sentence should end with \r\n
         case STATE_ENDING:
-            //fcore_rtxWrite((uint8_t*)"**E\r\n", 5);
             _gnssState = (c == '\n') ? STATE_DONE : STATE_INVALID;
             break;
-            
+        
+        // Add the \r\n to the buffer, trigger GNSS parsing.
         case STATE_DONE:
-            //fcore_rtxWrite((uint8_t*)"**D\r\n", 5);
             _gnssBuffer[_gnssIdx++] = '\r';
             _gnssBuffer[_gnssIdx++] = '\n';
             return _gnssParse();
             break;
             
         case STATE_INVALID:
-            fcore_rtxWrite((uint8_t*)"NOPE\r\n", 6);
             return GNSS_INVALID;
             break;
     }

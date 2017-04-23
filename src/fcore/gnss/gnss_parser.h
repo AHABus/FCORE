@@ -15,6 +15,8 @@ typedef enum {
     GNSS_NOTGGA,
 } GNSSStatus;
 
+/// Resets the GNSS state machine to its start state.
 extern void fcore_gnssReset();
 
+/// Feeds [c] to the GNSS state machine and returns its new status.
 extern GNSSStatus fcore_gnssFeed(char c);
