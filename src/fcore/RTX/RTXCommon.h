@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define PROTOCOL_VERSION    0x01
+#define PROTOCOL_VERSION    0x03
 
 #define FRAME_SIZE          256
 #define FRAME_HEADERSIZE    4
