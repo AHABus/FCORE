@@ -1,5 +1,5 @@
-FlightCore
-==========
+AHABus - FCORE
+==============
 
     Version 0.1-A4
     Author: Amy parent <amy@amyparent.com>
